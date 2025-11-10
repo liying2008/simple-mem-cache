@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicLong
 
 /**
  * 高性能内存缓存（支持TTL + 并发安全 + 轻量、无外部依赖 + 使用简单）
@@ -30,7 +29,6 @@ class SimpleCache<K, V>(
     private data class CacheValue<V>(
         @Volatile var value: V,
         val expireAt: Long,
-        val lastAccess: AtomicLong = AtomicLong(System.nanoTime())
     )
 
     private val cache = ConcurrentHashMap<K, CacheValue<V>>()
@@ -60,7 +58,6 @@ class SimpleCache<K, V>(
             remove(key, "expired")
             return null
         }
-        entry.lastAccess.set(System.nanoTime())
         touchKey(key)
         return entry.value
     }
@@ -89,6 +86,18 @@ class SimpleCache<K, V>(
         if (removed != null) {
             accessOrder.remove(key)
             listener?.onRemove(key, removed.value, reason)
+        }
+    }
+
+    /** 清空所有缓存 */
+    fun clear(reason: String = "manual") {
+        val entries = cache.entries.toList()
+        cache.clear()
+        accessOrder.clear()
+        listener?.let {
+            entries.forEach { (k, v) ->
+                it.onRemove(k, v.value, reason)
+            }
         }
     }
 
@@ -133,7 +142,7 @@ class SimpleCache<K, V>(
         expireAt > 0 && System.currentTimeMillis() > expireAt
 
     /** 关闭清理线程（仅在 autoClean = true 时需要） */
-    fun shutdown() {
+    fun shutdownCleaner() {
         if (autoClean) {
             cleaner.shutdown()
         }

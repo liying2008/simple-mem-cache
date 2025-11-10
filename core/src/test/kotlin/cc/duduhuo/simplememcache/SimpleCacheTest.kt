@@ -24,6 +24,9 @@ class SimpleCacheTest {
                     } else if (key == "user:1") {
                         assertEquals("ZhangSan", value)
                         assertEquals("manual", reason)
+                    } else if (key == "user:2") {
+                        assertEquals("LiSi", value)
+                        assertEquals("manual", reason)
                     }
                 }
             }
@@ -45,5 +48,9 @@ class SimpleCacheTest {
         // 测试过期
         Thread.sleep(6000)
         assertNull(cache.get("hello"))
+
+        cache.put("user:2", "LiSi")
+        cache.clear()
+        assertNull(cache.get("user:2"))
     }
 }

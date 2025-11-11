@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "cc.duduhuo"
-version = "1.0.0"
+version = "1.1.0"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -20,7 +20,7 @@ java {
 
 dependencies {
     // Apply the kotlinx bundle of dependencies from the version catalog (`gradle/libs.versions.toml`).
-    implementation(libs.kotlinStdlib)
+    implementation(libs.kotlinStdlibJdk8)
     testImplementation(kotlin("test"))
 }
 

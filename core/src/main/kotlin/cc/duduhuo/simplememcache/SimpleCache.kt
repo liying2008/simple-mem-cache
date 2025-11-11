@@ -50,16 +50,26 @@ class SimpleCache<K, V>(
     }
 
     /** 写入缓存 */
-    fun put(key: K, value: V, ttlMillis: Long = defaultTtlMillis) {
+    fun put(key: K, value: V, ttlMillis: Long) {
         val expireAt = if (ttlMillis > 0) System.currentTimeMillis() + ttlMillis else 0L
         cache[key] = CacheValue(value, expireAt)
         touchKey(key)
         evictIfNeeded()
     }
 
+    /** 写入缓存 */
+    fun put(key: K, value: V) {
+        put(key, value, defaultTtlMillis)
+    }
+
     /** 批量写入缓存 */
-    fun putAll(entries: Map<K, V>, ttlMillis: Long = defaultTtlMillis) {
+    fun putAll(entries: Map<K, V>, ttlMillis: Long) {
         entries.forEach { (k, v) -> put(k, v, ttlMillis) }
+    }
+
+    /** 批量写入缓存 */
+    fun putAll(entries: Map<K, V>) {
+        putAll(entries, defaultTtlMillis)
     }
 
     /** 读取缓存（更新访问顺序） */
@@ -91,21 +101,26 @@ class SimpleCache<K, V>(
     }
 
     /** 获取或加载（缓存不存在时加载） */
-    fun getOrLoad(key: K, ttlMillis: Long = defaultTtlMillis, loader: (K) -> V): V {
+    fun getOrLoad(key: K, ttlMillis: Long, loader: java.util.function.Function<K, V>): V {
         val existing = get(key)
         if (existing != null) return existing
 
         synchronized(key.toString().intern()) {
             val doubleCheck = get(key)
             if (doubleCheck != null) return doubleCheck
-            val newValue = loader(key)
+            val newValue = loader.apply(key)
             put(key, newValue, ttlMillis)
             return newValue
         }
     }
 
+    /** 获取或加载（缓存不存在时加载） */
+    fun getOrLoad(key: K, loader: java.util.function.Function<K, V>): V {
+        return getOrLoad(key, defaultTtlMillis, loader)
+    }
+
     /** 删除缓存 */
-    fun remove(key: K, reason: String = "manual") {
+    fun remove(key: K, reason: String) {
         val removed = cache.remove(key)
         if (removed != null) {
             accessOrder.remove(key)
@@ -113,8 +128,13 @@ class SimpleCache<K, V>(
         }
     }
 
+    /** 删除缓存 */
+    fun remove(key: K) {
+        remove(key, "manual")
+    }
+
     /** 清空所有缓存 */
-    fun clear(reason: String = "manual") {
+    fun clear(reason: String) {
         val entries = cache.entries.toList()
         cache.clear()
         accessOrder.clear()
@@ -123,6 +143,11 @@ class SimpleCache<K, V>(
                 listener.onRemove(k, v.value, reason)
             }
         }
+    }
+
+    /** 清空所有缓存 */
+    fun clear() {
+        clear("manual")
     }
 
     /** 是否包含指定 key 且未过期 */

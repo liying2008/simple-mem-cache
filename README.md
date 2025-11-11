@@ -2,7 +2,7 @@
 
 [![maven-central](https://img.shields.io/maven-central/v/cc.duduhuo/simple-mem-cache.svg?style=flat)](https://mvnrepository.com/artifact/cc.duduhuo/simple-mem-cache)
 
-> 一款轻量级、高性能、无依赖的 **内存缓存工具库**。
+> 一款轻量级、高性能的 **内存缓存工具库**。
 > 支持 TTL（过期时间）、RU 淘汰策略、并发访问与统计信息。  
 > 适用于 Web 应用、服务本地缓存、配置字典缓存等轻量场景，提供极简 API，开箱即用。
 
@@ -28,20 +28,20 @@
 <dependency>
     <groupId>cc.duduhuo</groupId>
     <artifactId>simple-mem-cache</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
 - 使用 Gradle (Groovy)
 
 ```groovy
-implementation 'cc.duduhuo:simple-mem-cache:1.0.0'
+implementation 'cc.duduhuo:simple-mem-cache:1.1.0'
 ```
 
 - 使用 Gradle (Kotlin)
 
 ```kotlin
-implementation("cc.duduhuo:simple-mem-cache:1.0.0")
+implementation("cc.duduhuo:simple-mem-cache:1.1.0")
 ```
 
 ---

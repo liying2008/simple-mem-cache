@@ -2,19 +2,21 @@
 
 [![maven-central](https://img.shields.io/maven-central/v/cc.duduhuo/simple-mem-cache.svg?style=flat)](https://mvnrepository.com/artifact/cc.duduhuo/simple-mem-cache)
 
-> 一款轻量级、高性能、无依赖的内存缓存工具，支持 TTL（过期时间）与并发访问。  
-> 适用于 Web 应用中存储热点数据，提供极简 API，开箱即用。
+> 一款轻量级、高性能、无依赖的 **内存缓存工具库**。
+> 支持 TTL（过期时间）、RU 淘汰策略、并发访问与统计信息。  
+> 适用于 Web 应用、服务本地缓存、配置字典缓存等轻量场景，提供极简 API，开箱即用。
 
 ---
 
 ## ✨ 特性
 
-- 🚀 **轻量无依赖** — 纯 Kotlin 编写，不依赖外部库；
+- 🚀 **轻量无依赖** — 纯 Kotlin 实现，无第三方库；
 - 🧵 **并发安全** — 基于 `ConcurrentHashMap`；
-- ⏰ **支持 TTL（过期时间）** — 缓存项可自动过期；
+- ⏰ **TTL 支持** — 自动过期、可自定义过期时间；
 - ♻️ **RU 淘汰机制** — 超出容量自动删除最久未使用项；
 - 🧹 **自动/手动清理** — 可配置过期缓存清理周期，或手动清理；
-- 🪶 **简单易用** — 三个核心方法：`put` / `get` / `getOrLoad`。
+- 📊 **统计信息** — 支持命中、未命中、淘汰次数统计；
+- 🪶 **易用 API** — 三个核心方法：`put` / `get` / `getOrLoad`。
 
 ---
 
@@ -72,6 +74,25 @@ fun main() {
 ---
 
 ## 🧰 API 说明
+
+| 方法                            | 说明                  |
+| ----------------------------- |---------------------|
+| `put(key, value, ttlMillis)`  | 写入缓存（可指定TTL）        |
+| `putAll(map, ttlMillis)`      | 批量写入缓存              |
+| `get(key)`                    | 读取缓存                |
+| `getAll(keys)`                | 批量读取缓存              |
+| `getOrLoad(key, ttl, loader)` | 不存在则执行 `loader` 加载  |
+| `remove(key, reason)`         | 删除缓存项               |
+| `clear(reason)`               | 清空全部缓存              |
+| `containsKey(key)`            | 判断是否存在且未过期          |
+| `keys()`                      | 返回所有有效键             |
+| `values()`                    | 返回所有有效值             |
+| `entries()`                   | 返回所有有效条目            |
+| `ttl(key)`                    | 查询指定键的剩余过期时间（ms）    |
+| `size()`                      | 当前有效缓存数量            |
+| `cleanup()`                   | 手动清理过期缓存            |
+| `stats()`                     | 获取缓存统计信息（命中、未命中、淘汰） |
+| `shutdownCleaner()`           | 关闭自动清理线程            |
 
 ### 🔹 创建缓存操作对象
 
@@ -142,10 +163,11 @@ cache.shutdownCleaner()
 
 ## 🔄 缓存淘汰策略（RU）
 
-`simple-mem-cache` 默认采用 **最近使用 (RU)** 策略：
+`SimpleCache` 内部维护一个 **访问顺序队列**：
 
-- 每次访问或写入都会将键移到队尾；
+- 每次访问(get)或写入(put)都会将键移到队尾；
 - 当超过最大容量时，优先移除队首（最久未使用的键）。
+- 淘汰时触发 `onRemove()` 回调，原因 `"evicted(RU)"`。
 
 ---
 

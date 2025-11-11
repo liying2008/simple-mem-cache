@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * 高性能内存缓存（支持TTL + 并发安全 + 轻量、无外部依赖 + 使用简单）
@@ -33,9 +34,14 @@ class SimpleCache<K, V>(
 
     private val cache = ConcurrentHashMap<K, CacheValue<V>>()
     private val accessOrder = ConcurrentLinkedDeque<K>() // 维护访问顺序
-    private var cleaner = Executors.newSingleThreadScheduledExecutor { r ->
+    private val cleaner = Executors.newSingleThreadScheduledExecutor { r ->
         Thread(r, "SimpleCache-Cleaner").apply { isDaemon = true }
     }
+
+    // 统计信息
+    private val hitCount = AtomicLong(0)
+    private val missCount = AtomicLong(0)
+    private val evictCount = AtomicLong(0)
 
     init {
         if (autoClean) {
@@ -51,23 +57,41 @@ class SimpleCache<K, V>(
         evictIfNeeded()
     }
 
-    /** 读取缓存（更新访问时间） */
+    /** 批量写入缓存 */
+    fun putAll(entries: Map<K, V>, ttlMillis: Long = defaultTtlMillis) {
+        entries.forEach { (k, v) -> put(k, v, ttlMillis) }
+    }
+
+    /** 读取缓存（更新访问顺序） */
     fun get(key: K): V? {
-        val entry = cache[key] ?: return null
-        if (entry.isExpired()) {
-            remove(key, "expired")
+        val entry = cache[key] ?: run {
+            missCount.incrementAndGet()
             return null
         }
+
+        if (entry.isExpired()) {
+            remove(key, "expired")
+            missCount.incrementAndGet()
+            return null
+        }
+
+        hitCount.incrementAndGet()
         touchKey(key)
         return entry.value
     }
 
+    /** 批量读取缓存 */
+    fun getAll(keys: Collection<K>): Map<K, V> {
+        val result = mutableMapOf<K, V>()
+        keys.forEach { key ->
+            val value = get(key)
+            if (value != null) result[key] = value
+        }
+        return result
+    }
+
     /** 获取或加载（缓存不存在时加载） */
-    fun getOrLoad(
-        key: K,
-        ttlMillis: Long = defaultTtlMillis,
-        loader: (K) -> V
-    ): V {
+    fun getOrLoad(key: K, ttlMillis: Long = defaultTtlMillis, loader: (K) -> V): V {
         val existing = get(key)
         if (existing != null) return existing
 
@@ -94,26 +118,61 @@ class SimpleCache<K, V>(
         val entries = cache.entries.toList()
         cache.clear()
         accessOrder.clear()
-        listener?.let {
+        listener?.let { listener ->
             entries.forEach { (k, v) ->
-                it.onRemove(k, v.value, reason)
+                listener.onRemove(k, v.value, reason)
             }
         }
     }
 
-    /**
-     * 主动清理过期缓存（可被外部调用）
-     */
+    /** 是否包含指定 key 且未过期 */
+    fun containsKey(key: K): Boolean = get(key) != null
+
+    /** 获取所有有效键 */
+    fun keys(): Set<K> = cache.entries
+        .filter { !it.value.isExpired() }
+        .map { it.key }
+        .toSet()
+
+    /** 获取所有有效值 */
+    fun values(): Set<V> = cache.entries
+        .filter { !it.value.isExpired() }
+        .map { it.value.value }
+        .toSet()
+
+    /** 获取所有有效条目 */
+    fun entries(): Map<K, V> = cache.entries
+        .filter { !it.value.isExpired() }
+        .associate { it.key to it.value.value }
+
+    /** 当前缓存条目数量 */
+    fun size(): Int = keys().size
+
+    /** 查询指定key的剩余TTL（毫秒），若无则返回null */
+    fun ttl(key: K): Long? {
+        val entry = cache[key] ?: return null
+        if (entry.expireAt <= 0) return null
+        val remaining = entry.expireAt - System.currentTimeMillis()
+        return if (remaining > 0) remaining else null
+    }
+
+    /** 返回统计信息 */
+    fun stats(): CacheStats = CacheStats(
+        size = size(),
+        hits = hitCount.get(),
+        misses = missCount.get(),
+        evictions = evictCount.get()
+    )
+
+    /** 主动清理过期缓存（可被外部调用） */
     fun cleanup() {
         val now = System.currentTimeMillis()
         val expiredKeys = mutableListOf<K>()
-
         cache.forEach { (k, v) ->
             if (v.expireAt > 0 && now > v.expireAt) {
                 expiredKeys.add(k)
             }
         }
-
         expiredKeys.forEach { remove(it, "expired") }
     }
 
@@ -126,6 +185,7 @@ class SimpleCache<K, V>(
         while (cache.size > maxSize) {
             val oldestKey = accessOrder.pollFirst() ?: break
             if (cache.containsKey(oldestKey)) {
+                evictCount.incrementAndGet()
                 remove(oldestKey, "evicted(RU)")
             }
         }
@@ -153,3 +213,15 @@ class SimpleCache<K, V>(
 interface CacheListener<K, V> {
     fun onRemove(key: K, value: V, reason: String)
 }
+
+/** 缓存统计信息 */
+data class CacheStats(
+    /** 当前有效缓存数量 */
+    val size: Int,
+    /** 命中次数 */
+    val hits: Long,
+    /** 未命中次数 */
+    val misses: Long,
+    /** 淘汰次数 */
+    val evictions: Long
+)

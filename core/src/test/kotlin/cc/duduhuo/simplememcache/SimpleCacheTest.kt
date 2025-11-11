@@ -8,6 +8,7 @@ package cc.duduhuo.simplememcache
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SimpleCacheTest {
     @Test
@@ -52,5 +53,33 @@ class SimpleCacheTest {
         cache.put("user:2", "LiSi")
         cache.clear()
         assertNull(cache.get("user:2"))
+
+        println("----")
+        cache.putAll(
+            mapOf(
+                "user:3" to "WangWu",
+                "user:4" to "ZhaoLiu",
+                "user:5" to "QianSan",
+            )
+        )
+        assertEquals(3, cache.size())
+        assertTrue(cache.containsKey("user:4"))
+        assertTrue {
+            val ttl = cache.ttl("user:4")
+            ttl != null && ttl > 0
+        }
+        assertEquals(3, cache.keys().size)
+        cache.keys().forEach { key ->
+            println("$key = ${cache.get(key)}")
+        }
+        cache.get("hello") // missing
+        cache.get("hello") // missing
+        val stats = cache.stats()
+        assertTrue {
+            stats.size == 3
+            stats.hits == 3L
+            stats.misses == 2L
+            stats.evictions == 0L
+        }
     }
 }

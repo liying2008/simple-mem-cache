@@ -10,15 +10,15 @@ import cc.duduhuo.simplememcache.SimpleCache
 
 
 fun main() {
-    val cache = SimpleCache<String, String>(
-        maxSize = 100,
-        defaultTtlMillis = 5000,
-        listener = object : CacheListener<String, String> {
+    val cache = SimpleCache.builder<String, String>()
+        .maxSize(100)
+        .defaultTtlMillis(2000)
+        .listener(object : CacheListener<String, String> {
             override fun onRemove(key: String, value: String, reason: String) {
                 println("Removed [$key] = $value because $reason")
             }
-        }
-    )
+        })
+        .build()
 
     // 普通存取
     cache.put("hello", "world")
@@ -33,6 +33,6 @@ fun main() {
     println(cache.get("user:1")) // ZhangSan
 
     // 测试过期
-    Thread.sleep(6000)
+    Thread.sleep(2000)
     println(cache.get("hello")) // null (expired)
 }

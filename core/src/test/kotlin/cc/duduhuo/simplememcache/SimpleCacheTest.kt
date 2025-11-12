@@ -13,10 +13,10 @@ import kotlin.test.assertTrue
 class SimpleCacheTest {
     @Test
     fun test() {
-        val cache = SimpleCache(
-            maxSize = 100,
-            defaultTtlMillis = 5000,
-            listener = object : CacheListener<String, String> {
+        val cache = SimpleCache.builder<String, String>()
+            .maxSize(10)
+            .defaultTtlMillis(2)
+            .listener(object : CacheListener<String, String> {
                 override fun onRemove(key: String, value: String, reason: String) {
                     println("Removed [$key] = $value because $reason")
                     if (key == "hello") {
@@ -30,8 +30,8 @@ class SimpleCacheTest {
                         assertEquals("manual", reason)
                     }
                 }
-            }
-        )
+            })
+            .build()
 
         // 普通存取
         cache.put("hello", "world")
@@ -47,7 +47,7 @@ class SimpleCacheTest {
         assertNull(cache.get("user:1"))
 
         // 测试过期
-        Thread.sleep(6000)
+        Thread.sleep(3000)
         assertNull(cache.get("hello"))
 
         cache.put("user:2", "LiSi")

@@ -20,13 +20,45 @@ import java.util.concurrent.atomic.AtomicLong
  * @param autoClean 是否启用自动清理线程（默认 true）
  * @param cleanIntervalMinutes 自动清理间隔（仅在 autoClean=true 时生效，默认 1 分钟）
  */
-class SimpleCache<K, V>(
-    private val maxSize: Int = 0,
-    private val defaultTtlMillis: Long = 0,
-    private val listener: CacheListener<K, V>? = null,
-    private val autoClean: Boolean = true,
-    private val cleanIntervalMinutes: Long = 1
+class SimpleCache<K, V> private constructor(
+    private val maxSize: Int,
+    private val defaultTtlMillis: Long,
+    private val listener: CacheListener<K, V>?,
+    private val autoClean: Boolean,
+    private val cleanIntervalMinutes: Long
 ) {
+
+    // ============================
+    // Builder for Java compatibility
+    // ============================
+    class Builder<K, V> {
+        private var maxSize: Int = 0
+        private var defaultTtlMillis: Long = 0
+        private var listener: CacheListener<K, V>? = null
+        private var autoClean: Boolean = true
+        private var cleanIntervalMinutes: Long = 1
+
+        fun maxSize(maxSize: Int) = apply { this.maxSize = maxSize }
+        fun defaultTtlMillis(ttl: Long) = apply { this.defaultTtlMillis = ttl }
+        fun listener(listener: CacheListener<K, V>) = apply { this.listener = listener }
+        fun autoClean(autoClean: Boolean) = apply { this.autoClean = autoClean }
+        fun cleanIntervalMinutes(minutes: Long) = apply { this.cleanIntervalMinutes = minutes }
+
+        fun build(): SimpleCache<K, V> =
+            SimpleCache(
+                maxSize = maxSize,
+                defaultTtlMillis = defaultTtlMillis,
+                listener = listener,
+                autoClean = autoClean,
+                cleanIntervalMinutes = cleanIntervalMinutes
+            )
+    }
+
+    companion object {
+        @JvmStatic
+        fun <K, V> builder() = Builder<K, V>()
+    }
+
     private data class CacheValue<V>(
         @Volatile var value: V,
         val expireAt: Long,

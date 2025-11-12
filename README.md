@@ -48,26 +48,54 @@ implementation("cc.duduhuo:simple-mem-cache:1.1.0")
 
 ## ⚙️ 初始化示例
 
-```kotlin
-import cc.duduhuo.simplememcache.SimpleCache
-import cc.duduhuo.simplememcache.CacheListener
+- 使用 **Kotlin**
 
+```kotlin
 fun main() {
-    val cache = SimpleCache<String, String>(
-        maxSize = 1000,               // 最大缓存容量（0 表示不限制）
-        defaultTtlMillis = 10_000,    // 默认缓存过期时间 10 秒
-        autoClean = true,             // 是否自动清理过期缓存
-        cleanIntervalMinutes = 1,     // 清理周期（分钟）
-        listener = object : CacheListener<String, String> {
+    val cache = SimpleCache.builder<String, String>()
+        .maxSize(1000)              // 最大缓存容量（0 表示不限制）
+        .defaultTtlMillis(10_000)   // 默认缓存过期时间 10 秒（0 表示永不过期）
+        .autoClean(true)            // 是否自动清理过期缓存
+        .cleanIntervalMinutes(1)    // 清理周期（分钟）（仅当 autoClean = true 时生效）
+        .listener(object : CacheListener<String, String> {
             override fun onRemove(key: String, value: String, reason: String) {
                 println("Removed [$key]=$value because $reason")
             }
-        }
-    )
+        })    // 缓存事件监听器
+        .build()
 
-    cache.put("A", "Alpha")                 // 写入缓存
-    println(cache.get("A"))                 // 读取缓存
-    println(cache.getOrLoad("B") { "Bravo" }) // 不存在则加载
+    cache.put("A", "Alpha")    // 写入缓存
+    println(cache.get("A"))    // 读取缓存
+    println(cache.getOrLoad("B", 3000) { key ->
+        println(">>> Loading from DB for $key")
+        "Bravo"
+    }) // 不存在则加载
+}
+```
+
+- 使用 **Java**
+
+```java
+public static void main(String[] args) {
+    SimpleCache<String, String> cache = SimpleCache.<String, String>builder()
+        .maxSize(1000)              // 最大缓存容量（0 表示不限制）
+        .defaultTtlMillis(10_000)   // 默认缓存过期时间 10 秒（0 表示永不过期）
+        .autoClean(true)            // 是否自动清理过期缓存
+        .cleanIntervalMinutes(1)    // 清理周期（分钟）（仅当 autoClean = true 时生效）
+        .listener(new CacheListener<String, String>() {
+            @Override
+            public void onRemove(String key, String value, String reason) {
+                System.out.println("Removed [" + key + "] = " + value + " because " + reason);
+            }
+        })    // 缓存事件监听器
+        .build();
+
+    cache.put("A", "Alpha");               // 写入缓存
+    System.out.println(cache.get("A"));    // 读取缓存
+    System.out.println(cache.getOrLoad("B", 3000, key -> {
+        System.out.println(">>> Loading from DB for " + key);
+        return "Bravo";
+    })); // 不存在则加载
 }
 ```
 
@@ -93,18 +121,6 @@ fun main() {
 | `cleanup()`                   | 手动清理过期缓存            |
 | `stats()`                     | 获取缓存统计信息（命中、未命中、淘汰） |
 | `shutdownCleaner()`           | 关闭自动清理线程            |
-
-### 🔹 创建缓存操作对象
-
-```kotlin
-val cache = SimpleCache<K, V>(
-    maxSize = 1000,               // 缓存最大数量（0 表示不限制）
-    defaultTtlMillis = 5000,      // 默认TTL毫秒（0 表示永不过期）
-    listener = null,              // 可选缓存事件监听器
-    autoClean = true,             // 是否自动启动清理任务
-    cleanIntervalMinutes = 1      // 自动清理间隔（仅当 autoClean = true 时生效）
-)
-```
 
 ### 🔹 写入缓存
 
@@ -174,14 +190,15 @@ cache.shutdownCleaner()
 ## 🧩 监听器示例
 
 ```kotlin
-val cache = SimpleCache<String, Int>(
-    maxSize = 100,
-    listener = object : CacheListener<String, Int> {
-        override fun onRemove(key: String, value: Int, reason: String) {
-            println("Removed $key=$value because $reason")
+val cache = SimpleCache.builder<String, String>()
+    .maxSize(100)    // 最大缓存容量（0 表示不限制）
+    .listener(object : CacheListener<String, String> {
+        override fun onRemove(key: String, value: String, reason: String) {
+            println("Removed [$key]=$value because $reason")
         }
-    }
-)
+    })    // 缓存事件监听器
+    .build()
+
 ```
 
 监听事件触发原因包括：

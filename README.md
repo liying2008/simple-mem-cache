@@ -222,19 +222,19 @@ val cache = SimpleCache.builder<String, String>()
 
 ### 🔧 测试环境
 
-| 配置项   | 值                                     |
-|-------|---------------------------------------|
-| CPU   | Intel(R) Core(TM) i7-11800H @ 2.30GHz |
-| 内存    | 32.0 GB                               |
-| JDK   | OpenJDK 8                             |
-| 操作系统  | Windows 11 家庭中文版 25H2                 |
-| 核心线程数 | 8 核心 16 线程                            |
+| 配置项    | 值                                     |
+|--------|---------------------------------------|
+| CPU    | Intel(R) Core(TM) i7-11800H @ 2.30GHz |
+| 内存     | 32.0 GB                               |
+| JDK    | openjdk version "1.8.0_292"           |
+| 操作系统   | Windows 11 家庭中文版 25H2                 |
+| CPU线程数 | 8 核心 16 线程                            |
 
 ### 🧪 测试代码
 
 [SimpleCacheBenchmark.kt](core/src/test/kotlin/cc/duduhuo/simplememcache/SimpleCacheBenchmark.kt)
 
-### 📊 测试结果（ops/ms）
+### 📊 测试结果（ops/sec）
 
 ```
 ==== SimpleCache Benchmark ====

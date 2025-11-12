@@ -28,20 +28,20 @@
 <dependency>
     <groupId>cc.duduhuo</groupId>
     <artifactId>simple-mem-cache</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
 - 使用 Gradle (Groovy)
 
 ```groovy
-implementation 'cc.duduhuo:simple-mem-cache:1.1.0'
+implementation 'cc.duduhuo:simple-mem-cache:1.2.0'
 ```
 
 - 使用 Gradle (Kotlin)
 
 ```kotlin
-implementation("cc.duduhuo:simple-mem-cache:1.1.0")
+implementation("cc.duduhuo:simple-mem-cache:1.2.0")
 ```
 
 ---
@@ -215,6 +215,46 @@ val cache = SimpleCache.builder<String, String>()
 - ✅ 频繁访问的配置或字典表
 - ✅ 轻量级替代 Redis（在单节点部署场景下）
 - ✅ 本地计算结果或数据加载缓存
+
+---
+
+## ⚡ Benchmark 性能测试
+
+### 🔧 测试环境
+
+| 配置项   | 值                                     |
+|-------|---------------------------------------|
+| CPU   | Intel(R) Core(TM) i7-11800H @ 2.30GHz |
+| 内存    | 32.0 GB                               |
+| JDK   | OpenJDK 8                             |
+| 操作系统  | Windows 11 家庭中文版 25H2                 |
+| 核心线程数 | 8 核心 16 线程                            |
+
+### 🧪 测试代码
+
+[SimpleCacheBenchmark.kt](core/src/test/kotlin/cc/duduhuo/simplememcache/SimpleCacheBenchmark.kt)
+
+### 📊 测试结果（ops/ms）
+
+```
+==== SimpleCache Benchmark ====
+
+[1] Single Thread Benchmark
+PUT: 139059 ops/sec
+GET: 4521817 ops/sec
+
+[2] Concurrent Benchmark
+Threads: 8, Total Ops: 1600000, Throughput: 706837 ops/sec
+
+[3] TTL Expiration Benchmark
+Inserted 10k entries with TTL=100ms
+Expired entries: 10000 / 10000
+
+[4] RU Eviction Benchmark
+Put 100k entries into maxSize=10k cache
+Cache size after eviction: 10000
+Eviction throughput: 16974 ops/sec
+```
 
 ---
 

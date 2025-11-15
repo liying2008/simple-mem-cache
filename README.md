@@ -28,20 +28,20 @@
 <dependency>
     <groupId>cc.duduhuo</groupId>
     <artifactId>simple-mem-cache</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
 </dependency>
 ```
 
 - 使用 Gradle (Groovy)
 
 ```groovy
-implementation 'cc.duduhuo:simple-mem-cache:1.2.0'
+implementation 'cc.duduhuo:simple-mem-cache:1.2.1'
 ```
 
 - 使用 Gradle (Kotlin)
 
 ```kotlin
-implementation("cc.duduhuo:simple-mem-cache:1.2.0")
+implementation("cc.duduhuo:simple-mem-cache:1.2.1")
 ```
 
 ---

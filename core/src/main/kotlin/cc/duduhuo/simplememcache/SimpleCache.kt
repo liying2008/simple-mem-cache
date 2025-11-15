@@ -5,6 +5,7 @@
 
 package cc.duduhuo.simplememcache
 
+import java.lang.IllegalArgumentException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
@@ -14,11 +15,11 @@ import java.util.concurrent.atomic.AtomicLong
 /**
  * 高性能内存缓存（支持TTL + 并发安全 + 轻量、无外部依赖 + 使用简单）
  *
- * @param maxSize 缓存最大容量，默认 0 表示不限制
- * @param defaultTtlMillis 默认 TTL 毫秒，0 表示永不过期
- * @param listener 缓存事件监听器
- * @param autoClean 是否启用自动清理线程（默认 true）
- * @param cleanIntervalMinutes 自动清理间隔（仅在 autoClean=true 时生效，默认 1 分钟）
+ * @param maxSize 缓存最大容量，0 表示不限制，默认 0
+ * @param defaultTtlMillis 默认缓存过期时间，0 表示永不过期，精度：毫秒，默认 0
+ * @param listener 缓存事件监听器，可选
+ * @param autoClean 是否启用自动清理线程，默认 true
+ * @param cleanIntervalMinutes 自动清理间隔（仅在 autoClean=true 时生效），精度：分钟，默认 1 分钟
  */
 class SimpleCache<K, V> private constructor(
     private val maxSize: Int,
@@ -32,15 +33,15 @@ class SimpleCache<K, V> private constructor(
     // Builder for Java compatibility
     // ============================
     class Builder<K, V> {
-        private var maxSize: Int = 0
-        private var defaultTtlMillis: Long = 0
+        private var maxSize: Int = MAX_SIZE_DEFAULT_VALUE
+        private var defaultTtlMillis: Long = DEFAULT_TTL_MILLIS_DEFAULT_VALUE
         private var listener: CacheListener<K, V>? = null
-        private var autoClean: Boolean = true
-        private var cleanIntervalMinutes: Long = 1
+        private var autoClean: Boolean = AUTO_CLEAN_DEFAULT_VALUE
+        private var cleanIntervalMinutes: Long = CLEAN_INTERVAL_MINUTES_DEFAULT_VALUE
 
         fun maxSize(maxSize: Int) = apply { this.maxSize = maxSize }
         fun defaultTtlMillis(ttl: Long) = apply { this.defaultTtlMillis = ttl }
-        fun listener(listener: CacheListener<K, V>) = apply { this.listener = listener }
+        fun listener(listener: CacheListener<K, V>?) = apply { this.listener = listener }
         fun autoClean(autoClean: Boolean) = apply { this.autoClean = autoClean }
         fun cleanIntervalMinutes(minutes: Long) = apply { this.cleanIntervalMinutes = minutes }
 
@@ -55,6 +56,18 @@ class SimpleCache<K, V> private constructor(
     }
 
     companion object {
+        /** 缓存最大容量默认值  */
+        const val MAX_SIZE_DEFAULT_VALUE = 0
+
+        /** 默认缓存过期时间默认值  */
+        const val DEFAULT_TTL_MILLIS_DEFAULT_VALUE = 0L
+
+        /** 是否启用自动清理线程默认值  */
+        const val AUTO_CLEAN_DEFAULT_VALUE = true
+
+        /** 自动清理间隔默认值  */
+        const val CLEAN_INTERVAL_MINUTES_DEFAULT_VALUE = 1L
+
         @JvmStatic
         fun <K, V> builder() = Builder<K, V>()
     }
@@ -77,7 +90,11 @@ class SimpleCache<K, V> private constructor(
 
     init {
         if (autoClean) {
-            cleaner.scheduleAtFixedRate(::cleanup, cleanIntervalMinutes, cleanIntervalMinutes, TimeUnit.MINUTES)
+            if (cleanIntervalMinutes > 0) {
+                cleaner.scheduleAtFixedRate(::cleanup, cleanIntervalMinutes, cleanIntervalMinutes, TimeUnit.MINUTES)
+            } else {
+                throw IllegalArgumentException("cleanIntervalMinutes must be greater than 0")
+            }
         }
     }
 

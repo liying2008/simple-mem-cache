@@ -81,8 +81,10 @@ publishing {
 jreleaser {
     gitRootSearch = true
     signing {
-        active = Active.ALWAYS
-        armored = true
+        pgp {
+            active = Active.ALWAYS
+            armored = true
+        }
     }
     deploy {
         maven {

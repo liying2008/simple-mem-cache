@@ -4,7 +4,7 @@
 
 [versions]
 kotlin = "1.6.21"
-jreleaser = "1.21.0"
+jreleaser = "1.22.0"
 
 [libraries]
 kotlinStdlibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }

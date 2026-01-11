@@ -1,3 +1,8 @@
+/*
+ * Copyright 2025 Li Ying.
+ * Licensed under the MIT License.
+ */
+
 // The code in this file is a convention plugin - a Gradle mechanism for sharing reusable build logic.
 // `buildSrc` is a Gradle-recognized directory and every plugin there will be easily available in the rest of the build.
 package buildsrc.convention

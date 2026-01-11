@@ -1,3 +1,8 @@
+/*
+ * Copyright 2025 Li Ying.
+ * Licensed under the MIT License.
+ */
+
 plugins {
     // The Kotlin DSL plugin provides a convenient way to develop convention plugins.
     // Convention plugins are located in `src/main/kotlin`, with the file extension `.gradle.kts`,

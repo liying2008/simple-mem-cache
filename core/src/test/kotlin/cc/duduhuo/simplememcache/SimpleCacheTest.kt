@@ -13,11 +13,11 @@ import kotlin.test.assertTrue
 class SimpleCacheTest {
     @Test
     fun test() {
-        val cache = SimpleCache.builder<String, String>()
+        val cache = SimpleCache.builder<String, String?>()
             .maxSize(10)
             .defaultTtlMillis(2)
-            .listener(object : CacheListener<String, String> {
-                override fun onRemove(key: String, value: String, reason: String) {
+            .listener(object : CacheListener<String, String?> {
+                override fun onRemove(key: String, value: String?, reason: String) {
                     println("Removed [$key] = $value because $reason")
                     if (key == "hello") {
                         assertEquals("world", value)
@@ -38,13 +38,17 @@ class SimpleCacheTest {
         assertEquals("world", cache.get("hello"))
 
         // 模拟从数据库加载
-        val user = cache.getOrLoad("user:1", ttlMillis = 3000) { key ->
+        val user1 = cache.getOrLoad("user:1", ttlMillis = 3000) { key ->
             "ZhangSan"
         }
-        assertEquals("ZhangSan", user)
+        assertEquals("ZhangSan", user1)
         assertEquals("ZhangSan", cache.get("user:1"))
         cache.remove("user:1")
         assertNull(cache.get("user:1"))
+
+        val userEmpty = cache.getOrLoad("user:empty", ttlMillis = 3000, { key -> "" }, { v -> !v.isNullOrEmpty() })
+        assertEquals("", userEmpty)
+        assertEquals(null, cache.get("user:empty"))
 
         // 测试过期
         Thread.sleep(3000)

@@ -33,6 +33,10 @@ public class DemoJava {
         System.out.println(user); // ZhangSan
         System.out.println(cache.get("user:1")); // ZhangSan
 
+        String userEmpty = cache.getOrLoad("user:empty", 3000, key -> "", v -> v != null && !v.isEmpty());
+        System.out.println(userEmpty); // ""
+        System.out.println(cache.get("user:empty")); // null
+
         // 测试过期
         Thread.sleep(2000);
         System.out.println(cache.get("hello")); // null (expired)

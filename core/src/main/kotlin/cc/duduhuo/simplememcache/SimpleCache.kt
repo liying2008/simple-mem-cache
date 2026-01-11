@@ -150,17 +150,27 @@ class SimpleCache<K, V> private constructor(
     }
 
     /** 获取或加载（缓存不存在时加载） */
-    fun getOrLoad(key: K, ttlMillis: Long, loader: java.util.function.Function<K, V>): V {
+    fun getOrLoad(key: K, ttlMillis: Long, loader: java.util.function.Function<K, V>, putPolicy: CachePutPolicy<V>?): V {
         val existing = get(key)
         if (existing != null) return existing
 
         synchronized(key.toString().intern()) {
             val doubleCheck = get(key)
             if (doubleCheck != null) return doubleCheck
+
             val newValue = loader.apply(key)
-            put(key, newValue, ttlMillis)
+
+            if (putPolicy == null || putPolicy.shouldCache(newValue)) {
+                put(key, newValue, ttlMillis)
+            }
+
             return newValue
         }
+    }
+
+    /** 获取或加载（缓存不存在时加载） */
+    fun getOrLoad(key: K, ttlMillis: Long, loader: java.util.function.Function<K, V>): V {
+        return getOrLoad(key, ttlMillis, loader, null)
     }
 
     /** 获取或加载（缓存不存在时加载） */
@@ -281,6 +291,17 @@ class SimpleCache<K, V> private constructor(
             cleaner.shutdown()
         }
     }
+}
+
+fun interface CachePutPolicy<V> {
+    /**
+     * 判断是否应该缓存给定的值
+     *
+     * @param V 要检查的值的类型
+     * @param value 需要判断是否缓存的值，可以为null
+     * @return 如果应该缓存则返回true，否则返回false
+     */
+    fun shouldCache(value: V?): Boolean
 }
 
 /** 缓存事件监听器 */

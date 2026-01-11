@@ -32,6 +32,10 @@ fun main() {
     println(user) // ZhangSan
     println(cache.get("user:1")) // ZhangSan
 
+    val userEmpty = cache.getOrLoad("user:empty", ttlMillis = 3000, { key -> "" }, { v -> !v.isNullOrEmpty() })
+    println(userEmpty) // ""
+    println(cache.get("user:empty")) // null
+
     // 测试过期
     Thread.sleep(2000)
     println(cache.get("hello")) // null (expired)

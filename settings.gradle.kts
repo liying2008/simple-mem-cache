@@ -1,3 +1,8 @@
+/*
+ * Copyright 2025 Li Ying.
+ * Licensed under the MIT License.
+ */
+
 dependencyResolutionManagement {
     @Suppress("UnstableApiUsage")
     repositories {

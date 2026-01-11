@@ -1,3 +1,9 @@
+/*
+ * Copyright 2025 Li Ying.
+ * Licensed under the MIT License.
+ */
+
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jreleaser.model.Active
 
 plugins {
@@ -9,7 +15,7 @@ plugins {
 }
 
 group = "cc.duduhuo"
-version = "1.2.1"
+version = "1.3.0"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -22,6 +28,13 @@ dependencies {
     // Apply the kotlinx bundle of dependencies from the version catalog (`gradle/libs.versions.toml`).
     implementation(libs.kotlinStdlibJdk8)
     testImplementation(kotlin("test"))
+}
+
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        freeCompilerArgs += listOf("-Xjsr305=strict", "-Xjvm-default=all")
+        jvmTarget = "1.8"
+    }
 }
 
 tasks.getByName<Jar>("jar") {

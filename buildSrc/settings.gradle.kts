@@ -1,3 +1,8 @@
+/*
+ * Copyright 2025 Li Ying.
+ * Licensed under the MIT License.
+ */
+
 dependencyResolutionManagement {
 
     // Use Maven Central and the Gradle Plugin Portal for resolving dependencies in the shared build logic (`buildSrc`) project.

@@ -150,7 +150,15 @@ class SimpleCache<K, V> private constructor(
         return result
     }
 
-    /** 获取或加载（缓存不存在时加载） */
+    /**
+     * 根据指定的键获取缓存值，如果缓存中不存在，则通过加载器函数加载新值并缓存
+     *
+     * @param key 缓存的键
+     * @param ttlMillis 缓存的过期时间（毫秒）
+     * @param loader 用于加载新值的函数，当缓存中不存在指定键时调用
+     * @param putPolicy 缓存策略，用于判断是否应该将新值放入缓存，可为null表示无条件缓存
+     * @return 缓存中的值，如果不存在则返回加载的新值
+     */
     fun getOrLoad(key: K, ttlMillis: Long, loader: java.util.function.Function<K, V>, putPolicy: CachePutPolicy<V>?): V {
         val existing = get(key)
         if (existing != null) return existing

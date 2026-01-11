@@ -28,20 +28,20 @@
 <dependency>
     <groupId>cc.duduhuo</groupId>
     <artifactId>simple-mem-cache</artifactId>
-    <version>1.2.1</version>
+    <version>1.3.0</version>
 </dependency>
 ```
 
 - 使用 Gradle (Groovy)
 
 ```groovy
-implementation 'cc.duduhuo:simple-mem-cache:1.2.1'
+implementation 'cc.duduhuo:simple-mem-cache:1.3.0'
 ```
 
 - 使用 Gradle (Kotlin)
 
 ```kotlin
-implementation("cc.duduhuo:simple-mem-cache:1.2.1")
+implementation("cc.duduhuo:simple-mem-cache:1.3.0")
 ```
 
 ---
@@ -58,6 +58,10 @@ fun main() {
         .autoClean(true)            // 是否自动清理过期缓存
         .cleanIntervalMinutes(1)    // 清理周期（分钟）（仅当 autoClean = true 时生效）
         .listener(object : CacheListener<String, String> {
+            override fun onPut(key: String, value: String) {
+                println("Put [$key]=$value")
+            }
+
             override fun onRemove(key: String, value: String, reason: String) {
                 println("Removed [$key]=$value because $reason")
             }
@@ -84,6 +88,11 @@ public static void main(String[] args) {
         .cleanIntervalMinutes(1)    // 清理周期（分钟）（仅当 autoClean = true 时生效）
         .listener(new CacheListener<String, String>() {
             @Override
+            public void onPut(String key, String value) {
+                System.out.println("Put [" + key + "] = " + value);
+            }
+
+            @Override
             public void onRemove(String key, String value, String reason) {
                 System.out.println("Removed [" + key + "] = " + value + " because " + reason);
             }
@@ -103,24 +112,24 @@ public static void main(String[] args) {
 
 ## 🧰 API 说明
 
-| 方法                            | 说明                  |
-| ----------------------------- |---------------------|
-| `put(key, value, ttlMillis)`  | 写入缓存（可指定TTL）        |
-| `putAll(map, ttlMillis)`      | 批量写入缓存              |
-| `get(key)`                    | 读取缓存                |
-| `getAll(keys)`                | 批量读取缓存              |
-| `getOrLoad(key, ttl, loader)` | 不存在则执行 `loader` 加载  |
-| `remove(key, reason)`         | 删除缓存项               |
-| `clear(reason)`               | 清空全部缓存              |
-| `containsKey(key)`            | 判断是否存在且未过期          |
-| `keys()`                      | 返回所有有效键             |
-| `values()`                    | 返回所有有效值             |
-| `entries()`                   | 返回所有有效条目            |
-| `ttl(key)`                    | 查询指定键的剩余过期时间（ms）    |
-| `size()`                      | 当前有效缓存数量            |
-| `cleanup()`                   | 手动清理过期缓存            |
-| `stats()`                     | 获取缓存统计信息（命中、未命中、淘汰） |
-| `shutdownCleaner()`           | 关闭自动清理线程            |
+| 方法                                       | 说明                  |
+|------------------------------------------|---------------------|
+| `put(key, value, ttlMillis)`             | 写入缓存（可指定TTL）        |
+| `putAll(map, ttlMillis)`                 | 批量写入缓存              |
+| `get(key)`                               | 读取缓存                |
+| `getAll(keys)`                           | 批量读取缓存              |
+| `getOrLoad(key, ttl, loader, putPolicy)` | 不存在则执行 `loader` 加载  |
+| `remove(key, reason)`                    | 删除缓存项               |
+| `clear(reason)`                          | 清空全部缓存              |
+| `containsKey(key)`                       | 判断是否存在且未过期          |
+| `keys()`                                 | 返回所有有效键             |
+| `values()`                               | 返回所有有效值             |
+| `entries()`                              | 返回所有有效条目            |
+| `ttl(key)`                               | 查询指定键的剩余过期时间（ms）    |
+| `size()`                                 | 当前有效缓存数量            |
+| `cleanup()`                              | 手动清理过期缓存            |
+| `stats()`                                | 获取缓存统计信息（命中、未命中、淘汰） |
+| `shutdownCleaner()`                      | 关闭自动清理线程            |
 
 ### 🔹 写入缓存
 
@@ -128,6 +137,8 @@ public static void main(String[] args) {
 cache.put("key1", "value1")
 cache.put("key2", "value2", ttlMillis = 3000) // 单独设置过期时间
 ```
+
+> `onPut` 监听器会在条目被写入缓存后触发。
 
 ### 🔹 读取缓存
 
@@ -142,6 +153,8 @@ if (value != null) {
 
 ### 🔹 获取或加载（懒加载）
 
+最简示例：
+
 ```kotlin
 val user = cache.getOrLoad("user:1") { key ->
     // 模拟数据库加载逻辑
@@ -152,6 +165,17 @@ val user = cache.getOrLoad("user:1") { key ->
 > ✅ 如果缓存存在则直接返回；  
 > ❌ 如果缓存不存在或过期，则执行 `loader` 逻辑，并将结果自动写入缓存。
 
+如果需要根据 `loader` 的执行结果判断是否需要写入缓存，可以使用如下写法：
+
+```kotlin
+val user = cache.getOrLoad("user:1", 3000, { key -> {
+    // 模拟数据库加载逻辑
+    queryUserFromDB(key)
+}}, { value -> value != null })
+```
+
+> `getOrLoad` 方法的**第四个参数**是缓存写入策略，是一个函数式接口(`CachePutPolicy`)。参数为 `loader` 执行的结果，返回 `true` 表示需要写入缓存，返回 `false` 表示不需要写入缓存。
+
 ### 🔹 删除缓存
 
 ```kotlin
@@ -159,7 +183,7 @@ cache.remove("key1")    // 删除指定缓存
 cache.clear()           // 清空全部缓存
 ```
 
-> `onRemove` 监听器会在条目被清除（手动/过期/淘汰）时触发。
+> `onRemove` 监听器会在条目被清除（手动/过期/淘汰）后触发。
 
 ### 🔹 手动清理过期缓存（防止占用内存空间）
 
@@ -193,6 +217,9 @@ cache.shutdownCleaner()
 val cache = SimpleCache.builder<String, String>()
     .maxSize(100)    // 最大缓存容量（0 表示不限制）
     .listener(object : CacheListener<String, String> {
+        override fun onPut(key: String, value: String) {
+            println("Put [$key]=$value")
+        }
         override fun onRemove(key: String, value: String, reason: String) {
             println("Removed [$key]=$value because $reason")
         }
@@ -201,7 +228,7 @@ val cache = SimpleCache.builder<String, String>()
 
 ```
 
-监听事件触发原因包括：
+`onRemove` 监听事件触发原因包括：
 
 - `"manual"` — 手动删除；
 - `"expired"` — 缓存过期；

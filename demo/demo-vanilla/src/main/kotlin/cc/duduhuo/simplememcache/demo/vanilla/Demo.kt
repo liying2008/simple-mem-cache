@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Li Ying.
+ * Copyright 2025-present Li Ying.
  * Licensed under the MIT License.
  */
 
@@ -14,6 +14,10 @@ fun main() {
         .maxSize(100)
         .defaultTtlMillis(2000)
         .listener(object : CacheListener<String, String> {
+            override fun onPut(key: String, value: String) {
+                println("Put [$key] = $value")
+            }
+
             override fun onRemove(key: String, value: String, reason: String) {
                 println("Removed [$key] = $value because $reason")
             }

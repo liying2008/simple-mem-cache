@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Li Ying.
+ * Copyright 2025-present Li Ying.
  * Licensed under the MIT License.
  */
 
@@ -16,6 +16,11 @@ public class DemoJava {
             .autoClean(true)            // 是否自动清理过期缓存
             .cleanIntervalMinutes(1)    // 清理周期（分钟）（仅当 autoClean = true 时生效）
             .listener(new CacheListener<String, String>() {
+                @Override
+                public void onPut(String key, String value) {
+                    System.out.println("Put [" + key + "] = " + value);
+                }
+
                 @Override
                 public void onRemove(String key, String value, String reason) {
                     System.out.println("Removed [" + key + "] = " + value + " because " + reason);

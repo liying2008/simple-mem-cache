@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Li Ying.
+ * Copyright 2025-present Li Ying.
  * Licensed under the MIT License.
  */
 
@@ -14,6 +14,11 @@ public class DemoJava {
             .maxSize(100)
             .defaultTtlMillis(2000)
             .listener(new CacheListener<String, String>() {
+                @Override
+                public void onPut(String key, String value) {
+                    System.out.println("Put [" + key + "] = " + value);
+                }
+
                 @Override
                 public void onRemove(String key, String value, String reason) {
                     System.out.println("Removed [" + key + "] = " + value + " because " + reason);

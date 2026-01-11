@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Li Ying.
+ * Copyright 2025-present Li Ying.
  * Licensed under the MIT License.
  */
 
@@ -102,6 +102,7 @@ class SimpleCache<K, V> private constructor(
     fun put(key: K, value: V, ttlMillis: Long) {
         val expireAt = if (ttlMillis > 0) System.currentTimeMillis() + ttlMillis else 0L
         cache[key] = CacheValue(value, expireAt)
+        listener?.onPut(key, value)
         touchKey(key)
         evictIfNeeded()
     }
@@ -306,6 +307,19 @@ fun interface CachePutPolicy<V> {
 
 /** 缓存事件监听器 */
 interface CacheListener<K, V> {
+    /**
+     * 当添加缓存时调用
+     * @param key 缓存键
+     * @param value 缓存值
+     */
+    fun onPut(key: K, value: V)
+
+    /**
+     * 当条目被移除时调用
+     * @param key 被移除的条目的键
+     * @param value 被移除的条目的值
+     * @param reason 移除的原因
+     */
     fun onRemove(key: K, value: V, reason: String)
 }
 

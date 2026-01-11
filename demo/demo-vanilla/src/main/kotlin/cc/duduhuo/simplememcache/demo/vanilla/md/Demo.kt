@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Li Ying.
+ * Copyright 2025-present Li Ying.
  * Licensed under the MIT License.
  */
 
@@ -15,6 +15,10 @@ fun main() {
         .autoClean(true)          // 是否自动清理过期缓存
         .cleanIntervalMinutes(1)    // 清理周期（分钟）（仅当 autoClean = true 时生效）
         .listener(object : CacheListener<String, String> {
+            override fun onPut(key: String, value: String) {
+                println("Put [$key]=$value")
+            }
+
             override fun onRemove(key: String, value: String, reason: String) {
                 println("Removed [$key]=$value because $reason")
             }

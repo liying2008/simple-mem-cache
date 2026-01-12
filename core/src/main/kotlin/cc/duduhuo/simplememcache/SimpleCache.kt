@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.LongAdder
 
 /**
  * 高性能内存缓存（支持TTL + 并发安全 + 轻量、无外部依赖 + 使用简单）
@@ -84,9 +84,9 @@ class SimpleCache<K, V> private constructor(
     }
 
     // 统计信息
-    private val hitCount = AtomicLong(0)
-    private val missCount = AtomicLong(0)
-    private val evictCount = AtomicLong(0)
+    private val hitCount = LongAdder()
+    private val missCount = LongAdder()
+    private val evictCount = LongAdder()
 
     init {
         if (autoClean) {
@@ -125,17 +125,17 @@ class SimpleCache<K, V> private constructor(
     /** 读取缓存（更新访问顺序） */
     fun get(key: K): V? {
         val entry = cache[key] ?: run {
-            missCount.incrementAndGet()
+            missCount.increment()
             return null
         }
 
         if (entry.isExpired()) {
             remove(key, "expired")
-            missCount.incrementAndGet()
+            missCount.increment()
             return null
         }
 
-        hitCount.incrementAndGet()
+        hitCount.increment()
         touchKey(key)
         return entry.value
     }
@@ -252,9 +252,9 @@ class SimpleCache<K, V> private constructor(
     /** 返回统计信息 */
     fun stats(): CacheStats = CacheStats(
         size = size(),
-        hits = hitCount.get(),
-        misses = missCount.get(),
-        evictions = evictCount.get()
+        hits = hitCount.sum(),
+        misses = missCount.sum(),
+        evictions = evictCount.sum()
     )
 
     /** 主动清理过期缓存（可被外部调用） */
@@ -278,7 +278,7 @@ class SimpleCache<K, V> private constructor(
         while (cache.size > maxSize) {
             val oldestKey = accessOrder.pollFirst() ?: break
             if (cache.containsKey(oldestKey)) {
-                evictCount.incrementAndGet()
+                evictCount.increment()
                 remove(oldestKey, "evicted(RU)")
             }
         }

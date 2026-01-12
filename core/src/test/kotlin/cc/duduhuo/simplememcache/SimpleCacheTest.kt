@@ -15,7 +15,7 @@ class SimpleCacheTest {
     fun test() {
         val cache = SimpleCache.builder<String, String?>()
             .maxSize(10)
-            .defaultTtlMillis(2)
+            .defaultTtlMillis(2000)
             .listener(object : CacheListener<String, String?> {
                 override fun onPut(key: String, value: String?) {
                     println("Put [$key] = $value")

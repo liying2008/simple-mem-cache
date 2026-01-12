@@ -28,20 +28,20 @@
 <dependency>
     <groupId>cc.duduhuo</groupId>
     <artifactId>simple-mem-cache</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1</version>
 </dependency>
 ```
 
 - 使用 Gradle (Groovy)
 
 ```groovy
-implementation 'cc.duduhuo:simple-mem-cache:1.3.0'
+implementation 'cc.duduhuo:simple-mem-cache:1.3.1'
 ```
 
 - 使用 Gradle (Kotlin)
 
 ```kotlin
-implementation("cc.duduhuo:simple-mem-cache:1.3.0")
+implementation("cc.duduhuo:simple-mem-cache:1.3.1")
 ```
 
 ---
@@ -171,7 +171,7 @@ val user = cache.getOrLoad("user:1") { key ->
 val user = cache.getOrLoad("user:1", 3000, { key -> {
     // 模拟数据库加载逻辑
     queryUserFromDB(key)
-}}, { value -> value != null })
+}}, { it != null })
 ```
 
 > `getOrLoad` 方法的**第四个参数**是缓存写入策略，是一个函数式接口(`CachePutPolicy`)。参数为 `loader` 执行的结果，返回 `true` 表示需要写入缓存，返回 `false` 表示不需要写入缓存。
@@ -267,11 +267,11 @@ val cache = SimpleCache.builder<String, String>()
 ==== SimpleCache Benchmark ====
 
 [1] Single Thread Benchmark
-PUT: 139059 ops/sec
-GET: 4521817 ops/sec
+PUT: 134670 ops/sec
+GET: 5227938 ops/sec
 
 [2] Concurrent Benchmark
-Threads: 8, Total Ops: 1600000, Throughput: 706837 ops/sec
+Threads: 8, Total Ops: 1600000, Throughput: 759225 ops/sec
 
 [3] TTL Expiration Benchmark
 Inserted 10k entries with TTL=100ms
@@ -280,7 +280,7 @@ Expired entries: 10000 / 10000
 [4] RU Eviction Benchmark
 Put 100k entries into maxSize=10k cache
 Cache size after eviction: 10000
-Eviction throughput: 16974 ops/sec
+Eviction throughput: 19085 ops/sec
 ```
 
 ---
